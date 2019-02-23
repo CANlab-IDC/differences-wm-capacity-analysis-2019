@@ -41,20 +41,39 @@ Communication, Aging and Neuropsychology Lab (CANlab),
 Baruch Ivcher School of Psychology, Interdisciplinary Center (IDC) Herzliya
 P.O. Box 167, Herzliya, 4610101, Israel
 
-| | |
-|:--|:--|
-| e-mail: |	[boaz.ben.david@idc.ac.il](mailto:boaz.ben.david@idc.ac.il) |
-| Phone:  | 	+972-9-9602429 |
-| Fax: | +972-9-9602845  |
+<table>
+<tbody>
+<tr>
+<td align="left">e-mail:</td>
+<td align="left"><a href="mailto:boaz.ben.david@idc.ac.il">boaz.ben.david@idc.ac.il</a></td>
+</tr>
+<tr>
+<td align="left">Phone:</td>
+<td align="left">+972-9-9602429</td>
+</tr>
+<tr>
+<td align="left">Fax:</td>
+<td align="left">+972-9-9602845</td>
+</tr>
+</tbody>
+</table>
 
 For questions or comments regarding the analysis tools software presented in this repository, including requests for support or offers of contribution, please address *electronic correspondence only* to the software's author:
 
 **Joshua Estrin Skrzypek**
 
-| | |
-|:--|:--|
-| e-mail: |	[jskrzypek@gmail.com](mailto:jskrzypek@gmail.com) |
-| GitHub: |	@jskrzypek |
+<table>
+<tbody>
+<tr>
+<td align="left">e-mail:</td>
+<td align="left"><a href="mailto:jskrzypek@gmail.com">jskrzypek@gmail.com</a></td>
+</tr>
+<tr>
+<td align="left">GitHub:</td>
+<td align="left">@jskrzypek</td>
+</tr>
+</tbody>
+</table>
 
 ## Attribution
 
