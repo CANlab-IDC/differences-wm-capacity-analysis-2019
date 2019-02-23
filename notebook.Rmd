@@ -1,0 +1,684 @@
+---
+title: "VWP WM - 2019"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. Execute a chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*. When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+
+## Setup
+
+Install and then load (if necessary) libraries required by the analysis .
+After, set your working directory, this should be the directory with your `<script_name>.R` files.
+```{r setup, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE, include=FALSE}
+if (sum(is(try(find.package("knitr"), silent = T)) == "try-error")) install.packages("knitr", "rmarkdown")
+library("knitr")
+if (sum(is(try(find.package("Hmisc"), silent = T)) == "try-error")) install.packages("Hmisc")
+library("Hmisc")
+if (sum(is(try(find.package("zeallot"), silent = T)) == "try-error")) install.packages("zeallot")
+library("zeallot")
+if (sum(is(try(find.package("codetools"), silent = T)) == "try-error")) install.packages("codetools")
+if (sum(is(try(find.package("quantreg"), silent = T)) == "try-error")) install.packages("quantreg")
+if (sum(is(try(find.package("tidyverse"), silent = T)) == "try-error")) install.packages("tidyverse")
+library("magrittr")
+library("tidyverse")
+
+if (sum(is(try(find.package("zoo"), silent = T)) == "try-error")) install.packages("zoo")
+
+if (sum(is(try(find.package("glue"), silent = T)) == "try-error")) install.packages("glue")
+if (sum(is(try(find.package("styler"), silent = T)) == "try-error")) install.packages("styler")
+if (sum(is(try(find.package("lintr"), silent = T)) == "try-error")) install.packages("lintr")
+if (sum(is(try(find.package("lavaan"), silent = T)) == "try-error")) install.packages("lavaan")
+
+if (sum(is(try(find.package("devtools"), silent = T)) == "try-error")) install.packages("devtools")
+
+if (sum(is(try(find.package("hrbrthemes"), silent = T)) == "try-error")) install.packages("hrbrthemes")
+if (sum(is(try(find.package("numDeriv"), silent = T)) == "try-error")) install.packages("numDeriv")
+
+if (sum(is(try(find.package("viridis"), silent = T)) == "try-error")) install.packages("viridis")
+if (sum(is(try(find.package("ggedit"), silent = T)) == "try-error")) install.packages("ggedit")
+#library("ggedit")
+
+if (sum(is(try(find.package("gridExtra"), silent = T)) == "try-error")) install.packages("gridExtra")
+
+if (sum(is(try(find.package("plotly"), silent = T)) == "try-error")) install.packages("plotly")
+if (sum(is(try(find.package("padr"), silent = T)) == "try-error")) install.packages("padr")
+library("padr")
+
+if (sum(is(try(find.package("lambda.r"), silent = T)) == "try-error")) install.packages("lambda.r")
+library("lambda.r")
+
+if (sum(is(try(find.package("VWPre"), silent = T)) == "try-error")) install.packages("VWPre")
+library("VWPre")
+
+if (sum(is(try(find.package("nlme"), silent = T)) == "try-error")) install.packages("nlme")
+
+# if (sum(is(try(find.package("glmmADMB"), silent = T)) == "try-error")) install.packages("glmmADMB")
+# if (sum(is(try(find.package("glmmTMB"), silent = T)) == "try-error")) install.packages("glmmTMB")
+# if (sum(is(try(find.package("glmmBUGS"), silent = T)) == "try-error")) install.packages("glmmBUGS")
+if (sum(is(try(find.package("car"), silent = T)) == "try-error")) install.packages("car")
+if (sum(is(try(find.package("lme4"), silent = T)) == "try-error")) install.packages("lme4")
+library("lme4")
+
+# replace the string below with your desired working directory
+setwd("~/dev/CANlab-IDC/vwp/")
+
+source("./functions.R", local = T, echo = F)
+```
+
+## Load & prepare data (based on the VWPre vignette)
+
+Next, load the raw Sample Report file exported from the eyelink data viewer. (This may take a couple minutes if the file is large.)
+```{r}
+# replace the string below with the path to your desired data file
+data_source_file <- "rawdata/Sample_report_file.tsv"
+VWdat <- read.table(data_source_file, header = T, sep = "\t", na.strings = c(".", "NA"), fileEncoding = "ISO-8859-1", encoding = "UTF-8")
+```
+
+Run `prep_data` (from `VWPre`) and remove the extra columns.
+```{r}
+dat0 <- prep_data(data = VWdat, Subject = "RECORDING_SESSION_LABEL", Item = "conditionxnoise")
+# if there are columns you want to keep, pass a char list to `rm_extra_DVcols#Keep` (e.g. `Keep = c("RIGHT_PUPIL_SIZE", "LEFT_PUPIL_SIZE")`)
+dat0 <- rm_extra_DVcols(dat0, Keep = NULL)
+```
+
+Convert the IA id columns to integers
+```{r}
+dat0$LEFT_INTEREST_AREA_ID <- as.integer(as.character(dat0$LEFT_INTEREST_AREA_ID))
+dat0$RIGHT_INTEREST_AREA_ID <- as.integer(as.character(dat0$RIGHT_INTEREST_AREA_ID))
+```
+
+If needed, recode the interest areas. If you are using the standard CANlab experiment for the Eyelink, you don't need to modify this input. After recoding the IAs run `check_ia` above again.
+```{r}
+dat0 <- recode_ia(
+  data = dat0, IDs = c(
+    "0" = "0", "1" = "1", "2" = "2", "3" = "3",
+    "4" = "4", "5" = "0", "6" = "0", "7" = "0", "8" = "0", "9" = "0"
+  ),
+  Labels = c(
+    Bottom = "Outside", Center = "Outside", Distractor = "Distractor", Filler_1 = "Filler_1", Filler_2 = "Filler_2", Left = "Outside",
+    Right = "Outside", Target = "Target", Top = "Outside"
+  )
+)
+```
+
+Next relabel the `NA`s and add a time column. The `Time` parameter of `create_time_series` is for the amount of time before the word onset that the critical period starts, (normally `200`).
+```{r}
+dat1 <- relabel_na(data = dat0, NoIA = 5)
+dat2 <- create_time_series(data = dat1, Adjust = 200)
+```
+
+```{r}
+check_time_series(data = dat2)
+check_msg_time(data = dat2, Msg = "WITHOUT_HA")
+check_eye_recording(data = dat2)
+dat3 <- select_recorded_eye(data = dat2, Recording = "LandR", WhenLandR = "Right")
+```
+
+Clear unneeded environment variables
+```{r}
+remove(VWdat, dat0, dat1, dat2)
+```
+
+Load wm cap information & merge with dat3
+```{r}
+# digit_span <- read.csv("rawdata/Digit incorrect_Exp1.csv", header=T, col.names=c("TRIAL_ID"))
+wmcaps <- read.csv("rawdata/WM_span.csv", header = T, col.names = c("Subject", "wmcap"), colClasses = c("factor", "factor"))
+dat3$Subject <- as.factor(sub("111t", "111", as.character(dat3$Subject)))
+dat3 <- merge(x = dat3, y = wmcaps, by = "Subject", all = T)
+levels(dat3$wmcap) <- c("low", "high")
+dat3 <- add_trial_id(dat3)
+```
+
+Gather trial stats & merge into dat4
+```{r}
+dat4 <- merge(
+  x = dat3,
+  y = dat3 %>% collect_trial_stats() %>% select(Subject, TRIAL_INDEX, TrialLength, TrialSampleLength, Selection.Time, Touch.Time),
+  by = c("Subject", "TRIAL_INDEX"),
+  all = T
+)
+```
+
+Pad the trials
+```{r}
+start_val <- -200
+end_val <- 3500
+dat4_pad <- dat4 %>%
+  arrange(as.numeric(as.character(Subject)), as.numeric(TRIAL_INDEX), as.numeric(Time)) %>%
+  trim_to_selection() %>%
+  pad_trials(start_val = start_val, end_val = end_val, .fill_type = "Target")
+# dat4_pad_locf <- dat4 %>%
+#   arrange(as.numeric(Subject), as.numeric(TRIAL_INDEX), as.numeric(Time)) %>%
+#   trim_to_selection %>%
+#   pad_trials(start_val = start_val, end_val = end_val, .fill_type = "LOCF")
+```
+
+Check padding & filling
+```{r}
+# dat4_pad %>% group_vars()
+dat5_binom %>%
+  # filter(Subject == 100) %>%
+  group_by(Subject, TRIAL_INDEX) %>%
+  summarize(
+    nsamples = n(),
+    length = last(Time),
+    first_idx = first(SAMPLE_INDEX),
+    last_idx = last(SAMPLE_INDEX),
+    last_fix = last(IA_ID),
+    Selection.Time = last(Selection.Time),
+    Touch.Time = last(Touch.Time)
+  ) %>%
+  ungroup() %>%
+  arrange(as.numeric(Subject), as.numeric(TRIAL_INDEX))
+dat4_pad %>%
+  filter(Time >= 1800) %>%
+  # add_exclude_columns %>%
+  # exclude_practice %>%
+  # exclude_inc_sel %>%
+  # exclude_inc_dig %>%
+  # exclude_kbd_sel %>%
+  # exclude_bad_sub %>%
+  group_by(Time) %>%
+  summarize(ns = n()) %>%
+  filter(ns != 1)
+```
+
+Bin the data
+```{r}
+check_samplingrate(dat4_pad)
+# ds_options(SamplingRate = 500);
+
+dat5 <- bin_prop(dat4_pad, NoIA = 4, BinSize = 20, SamplingRate = 500)
+check_samplingrate(dat5)
+check_samples_per_bin(dat5)
+```
+
+### Visualize the prepped data before model fitting
+
+```{r}
+dat4_pad %>%
+  group_by(Subject) %>%
+  ggplot(aes(Time)) +
+  theme_bw() +
+  facet_grid(IA_ID ~ condition) +
+  # geom_freqpoly() +
+  stat_bin(geom = "bar", position = "stack", binwidth = 50) +
+  scale_color_brewer(type = "qual", palette = 2, guide = "legend") +
+  xlim(-200, 3000)
+dat4_pad %>%
+  exclude_all() %>%
+  bin_prop(NoIA = 4, BinSize = 20, SamplingRate = 500) %>%
+  ggplot(aes(Time, IA_1_P)) +
+  geom_horizon(bandwidth = 0.1) +
+  facet_grid(Subject ~ condition) +
+  viridis::scale_fill_viridis(name = "Fixations on target", discrete = TRUE, labels = scales::percent(seq(0, 1, 0.1) + 0.1)) +
+  xlim(-200, 3000)
+dat4_pad %>%
+  exclude_all() %>%
+  # group_by(Subject) %>%
+  # filter(Subject == "122" & condition == "r")
+  group_by(factor(IA_ID))
+ggplot(aes(Time, fill = factor(IA_ID))) +
+  theme_bw() +
+  facet_wrap(~TRIAL_INDEX) +
+  # geom_dotplot(method="histodot") +
+  stat_bin(geom = "bar", position = "stack", binwidth = 50) +
+  scale_fill_brewer(type = "qual", palette = 2, guide = "legend") +
+  xlim(0, 3000)
+```
+
+## Model design & fitting
+
+### Further data preparation & validation
+
+Prep for (g)lmer with elogit & binomial columns
+```{r}
+dat5_prep <- dat5 %>%
+  exclude_all() %>%
+  mutate(Time = Time / 1000)
+dat5_prep %>% select(condition, wmcap, load, Subject, Time, TRIAL_INDEX, starts_with("IA")) -> dat5_for_lmer
+dat5_prep %>% add_ot_cols(.max_deg = 3) -> dat5_ot
+
+dat5_elogit <- dat5_prep %>%
+  transform_to_elogit(NoIA = 4, ObsPerBin = 10)
+newcol <- "Difference_binom"
+dat5_binom <- dat5_ot %>%
+  create_binomial(NoIA = 4, ObsPerBin = 10, CustomBinom = c(1, 3)) # %>% mutate(Failures)
+```
+
+```{r Model design}
+cat("Model design (target lmer):\n-------------\n");
+print("IA_1_P ~ (ot1+ot2+ot3)*condition
+  + (ot1+ot2+ot3)*load*wmcap
+  + (1+ot1+ot2+ot3 | Subject)
+  + (1+ot1 | Subject:condition)
+  + (1+ot1 | Subject:load)")
+```
+
+Select & rescale the data for lmer/glmer
+```{r select & rescale}
+restricted_targfix_dat <- (
+  keepcritcorrect(dat4_pad, IncludeFiller = FALSE) %>%
+    select(., condition, wmcap, load, ot1, ot2, ot3, Subject, Time, starts_with("IA"))
+)
+scaled_targfix_dat <- (
+  restricted_targfix_pad %>%
+    mutate(.,
+      ot1 = scale(ot1, center = TRUE, scale = max(ot1, rm.na = TRUE) / 100),
+      ot2 = scale(ot2, center = TRUE, scale = max(ot2, rm.na = TRUE) / 100),
+      ot3 = scale(ot3, center = TRUE, scale = max(ot3, rm.na = TRUE) / 100)
+    ) %>%
+    select(., condition, wmcap, load, ot1, ot2, ot3, Subject, Time, starts_with("IA"))
+)
+# summary(scaled_targfix_dat)
+```
+
+Check the scales of the data
+```{r check scales}
+dat5 %>%
+  mutate(Time = Time / 1000) %>%
+  mutate(Time2 = Time^2, Time3 = Time^3) %>%
+  mutate(Time2 = Time^2, Time3 = Time^3) %>%
+  select(IA_1_P, Time, Time2, Time3, condition, load, wmcap, Subject) %>%
+  summary()
+```
+
+### Model fitting
+
+#### Linear Mixed Model
+
+##### LMM Fitting (using `lmer`)
+
+Run `lmer`
+```{r Run lmer }
+# targetfix_m.reml.3 <- lmer(IA_1_P ~ (ot1+ot2+ot3)*condition
+#   + (ot1+ot2+ot3)*load*wmcap
+#   + (1+ot1+ot2+ot3 | Subject)
+#   + (1+ot1 | Subject:condition)
+#   + (1+ot1 | Subject:load),
+#   control = lmerControl(optimizer="bobyqa"),
+#   data=scaled_targfix_dat,
+#   REML=T)
+# targetfix_m.nm.3 <- lmer(
+#   IA_1_P ~
+#     (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load +
+#     (ot.1 + ot.2 + ot.3) * load * wmcap +
+#     (1 + ot.1 + ot.2 + ot.3 | Subject) +
+#     (1 + ot.1 + ot.2 + ot.3 | Subject / condition:load),
+# verbose = 1,
+# control = lmerControl(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 25000)),
+# data = dat5_ot,
+# REML = T
+# )
+
+targetfix_m.nm.3 <- lmer(
+  IA_1_P ~
+    (ot.1 + ot.2 + ot.3) * condition +
+    (ot.1 + ot.2 + ot.3) * load * wmcap +
+    (1 + ot.1 + ot.2 + ot.3 | Subject) +
+    (1 + ot.1 + ot.2 + ot.3 | Subject / condition:load),
+verbose = 1,
+control = lmerControl(optimizer = "Nelder_Mead", optCtrl = list(maxfun = 25000)),
+data = dat5_ot,
+REML = T
+)
+targetfix_m.full <- lmer(IA_1_P ~ (Time + I(Time^2) + I(Time^3)) * condition
+  + (Time + I(Time^2) + I(Time^3)) * load * wmcap
+  + (1 + Time + I(Time^2) + I(Time^3) | Subject / condition:load),
+verbose = 2,
+control = lmerControl(optimizer = "bobyqa"),
+# control = lmerControl(optimizer="Nelder_Mead", optCtrl =list(maxfun=25000)),
+data = dat5_for_lmer, # %>% select(condition, wmcap, load, Subject, Time, starts_with("IA")) %>% scale_dat,
+REML = T
+)
+
+targetfix_m.full <- lmer(IA_1_P ~ (Time + I(Time^2) + I(Time^3)) * condition
+  + (Time + I(Time^2) + I(Time^3)) * load * wmcap
+  + (1 + Time + I(Time^2) + I(Time^3) | Subject / condition:load),
+verbose = 2,
+control = lmerControl(optimizer = "bobyqa"),
+data = dat5_for_lmer,
+REML = T
+)
+```
+
+##### LMM Plotting
+
+```{r plot lmer}
+# dat5_with_fit <- dat5_for_lmer;
+# dat5_with_fit <- fitted(targetfix_m.full);
+ggplot(dat5_for_lmer) + facet_wrap(~load + condition) +
+  theme_minimal() +
+  stat_summary(aes(Time, IA_1_P, color = factor(wmcap)), fun.y = mean, geom = "point") +
+  stat_summary(aes(Time, IA_3_P, color = factor(as.numeric(wmcap) + 2, labels = c("low - comp", "high - comp"))), fun.y = mean, geom = "point") +
+  # stat_summary(aes(y=mfit), fun.y=mean, geom="line") +
+  labs(y = "Fixation Proportion", x = "Time since word onset (ms)") +
+  scale_fill_brewer(type = "qual", palette = 2, guide = "legend") +
+  xlim(0, 3.000)
+```
+
+#### Generalized Linear Mixed Model
+
+##### GLMM Fitting (using `glmer`)
+
+run glmer
+```{r run glmer}
+targ.binom.full_ot <- glmer(
+  IA_1_Looks ~
+  (ot.1 + ot.2 + ot.3) * condition +
+    (ot.1 + ot.2 + ot.3) * load * wmcap +
+    (1 + ot.1 + ot.2 + ot.3 | Subject) +
+    (1 + ot.1 + ot.2 + ot.3 | Subject / condition:load),
+  data = dat5_binom,
+  family = binomial,
+  control = glmerControl(optimizer = "nloptwrap2")
+)
+targ.binom.full_ot_2 <- glmer(
+  IA_1_Looks ~
+  (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load
+  #+ (1+ot.1+ot.2+ot.3 | Subject)
+  + (1 + ot.1 + ot.2 + ot.3 | Subject / condition:load),
+  data = dat5_binom,
+  family = binomial,
+  control = glmerControl(optimizer = "nloptwrap2")
+)
+targ.binom.probit.full_ot_2 <- update(
+  targ.binom.full_ot_2,
+  family = binomial(link = "probit") # ,
+  # start = getME(targ.binom.full_ot_2, c("theta","fixef"))
+)
+targ.binom.ot_2.reducedRE <- update(
+  targ.binom.full_ot_2,
+  formula. = IA_1_Looks ~
+  (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject) + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject:wmcap)
+  # , family = binomial(link="probit")
+  # , start = getME(targ.binom.full_ot_2, c("theta","fixef"))
+)
+targ.binom.ot_2.noRE <- glm(data = dat5_binom, family = binomial(link = "logit"), formula = IA_1_Looks ~ (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load, control = list(maxit = 1e5, epsilon = 1e-8, trace = TRUE));
+targ.binom.ot_2.full.noRE <- glm(data = dat5_binom, family = binomial(link = "logit"), formula = IA_1_Looks ~ (ot.1 + ot.2 + ot.3) * condition * wmcap * load, control = list(maxit = 1e5, epsilon = 1e-8, trace = TRUE));
+save.image("./workspace7.RData")
+targ.binom.ot_2.reducedRE.moreReduced <- update(
+  targ.binom.ot_2.reducedRE,
+  formula. = IA_1_Looks ~
+  (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject)
+)
+save.image("./workspace7.RData")
+targ.binom.ot_2.reducedRE.full <- update(
+  targ.binom.ot_2.reducedRE,
+  formula. = IA_1_Looks ~
+  (ot.1 + ot.2 + ot.3) * condition * wmcap * load + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject) + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject:wmcap)
+  # , family = binomial(link="probit")
+  # , start = getME(targ.binom.full_ot_2, c("theta","fixef"))
+)
+targ.binom.ot_2.reducedRE.full.lessReduced <- update(
+  targ.binom.ot_2.reducedRE,
+  formula. = IA_1_Looks ~
+  (ot.1 + ot.2 + ot.3) * condition * wmcap * load + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject) + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject:wmcap)
+  # , family = binomial(link="probit")
+  # , start = getME(targ.binom.full_ot_2, c("theta","fixef"))
+); save.image("./workspace.RData")
+
+comp.binom.ot_2.noRE <- glm(data = dat5_binom, family = binomial(link = "logit"), formula = IA_3_Looks ~ (ot.1 + ot.2) * (condition + wmcap) * load, control = list(maxit = 1e5, epsilon = 1e-8, trace = TRUE)); save.image("./workspace.RData")
+comp.binom.ot_2.reducedRE <- update(
+  targ.binom.ot_2.reducedRE,
+  formula. = IA_3_Looks ~
+  (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load +
+    (1 + ot.1 + ot.2 + ot.3 | Subject) +
+    (1 + ot.1 + ot.2 + ot.3 | Subject:wmcap)
+  # , family = binomial(link="probit")
+  # , start = getME(targ.binom.full_ot_2, c("theta","fixef"))
+)
+comp.gauss_inv.ot_2.reducedRE <- update(
+  comp.binom.ot_2.reducedRE,
+  # formula. = IA_1_Looks ~
+  #   (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load +
+  #   (1 + ot.1 + ot.2 + ot.3 | Subject) +
+  #   (1 + ot.1 + ot.2 + ot.3 | Subject:wmcap),
+  family = inverse.gaussian
+  # , start = getME(targ.binom.full_ot_2, c("theta","fixef"))
+)
+comp.poisson.ot_2.reducedRE <- update(
+  comp.binom.ot_2.reducedRE,
+  family = binomial(link = poisson)
+)
+comp.binom.ot_2.reducedRE.full <- update(
+  comp.binom.ot_2.reducedRE,
+  formula. = IA_3_Looks ~
+   (ot.1 + ot.2 + ot.3) * condition * wmcap * load + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject) + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject:wmcap),
+  family = binomial
+)
+comp.binom.ot_2.reducedRE.reducedDeg2.moreReduced <- update(
+  comp.binom.ot_2.reducedRE.reducedDeg2,
+  formula. = IA_3_Looks ~
+    (ot.1 + ot.2) * (condition + wmcap) * load +
+    (1 + ot.1 + ot.2 | Subject)
+)
+# comp.binom.cloglog.ot_2.reducedRE <- update(
+#   comp.binom.ot_2.reducedRE,
+#   formula. = IA_3_Looks ~
+#     (ot.1 + ot.2) * (condition + wmcap) * load +
+#     (1 + ot.1 + ot.2 | Subject) +
+#     (1 + ot.1 + ot.2 | Subject:wmcap),
+#   family = binomial(link = cloglog)
+# )
+#comp.gauss_inv.ot_2.reducedRE <- glmer(
+#  IA_3_Looks ~
+#  (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load
+#  #+ (1+ot.1+ot.2+ot.3 | Subject)
+#  + (1 + ot.1 + ot.2 + ot.3 | Subject / condition:load),
+#  data = dat5_binom,
+#  family = binomial,
+#  control = glmerControl(optimizer = "nloptwrap2")
+#)
+fill.binom.ot_2.reducedRE.full <- update(
+  comp.binom.ot_2.reducedRE,
+  formula. = IA_2_Looks + IA_4_Looks ~
+   (ot.1 + ot.2 + ot.3) * condition * wmcap * load + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject) + 
+   (1 + ot.1 + ot.2 + ot.3 | Subject:wmcap),
+  family = binomial
+); save.image("./workspacebackup4.RData")
+targ.binom.ot_2.reducedRE.restart <- update(
+  targ.binom.ot_2.reducedRE
+  # , family = binomial(link="probit")
+  ,
+  start = getME(targ.binom.ot_2.reducedRE, c("theta", "fixef"))
+)
+targ.binom.probit.ot_2.reducedRE <- update(
+  targ.binom.ot_2.reducedRE
+  ,
+  family = binomial(link = "probit")
+)
+targ.binom.probit.full_ot_2.unnestRE <- update(
+  targ.binom.full_ot_2,
+  formula. = IA_1_Looks ~
+    (ot.1 + ot.2 + ot.3) * (condition + wmcap) * load +
+    (1 + ot.1 + ot.2 + ot.3 | Subject) +
+    (1 + ot.1 + ot.2 + ot.3 | condition) +
+    (1 + ot.1 + ot.2 + ot.3 | Subject:load),
+  family = binomial(link = "probit") # ,
+  # start = getME(targ.binom.full_ot_2, c("theta","fixef"))
+)
+targ.binom.full_ot_3 <- glmer(
+  IA_1_Looks ~
+  (ot.1 + ot.2 + ot.3) * condition * wmcap * load
+  #+ (1+ot.1+ot.2+ot.3 | Subject)
+  + (1 + ot.1 + ot.2 + ot.3 | Subject / condition:load:wmcap),
+  data = dat5_binom,
+  family = binomial,
+  control = glmerControl(optimizer = "nloptwrap2")
+)
+targ.binom.probit.full_ot_3 <- update(
+  targ.binom.full_ot_3,
+  family = binomial(link = "probit")
+)
+targ.binom.full <- glmer(
+  cbind(IA_1_Looks, Obs - IA_1_Looks) ~
+  (Time + I(Time^2) + I(Time^3)) * condition +
+    (Time + I(Time^2) + I(Time^3)) * load * wmcap +
+    (1 + Time + I(Time^2) + I(Time^3) | Subject) +
+    (1 + Time + I(Time^2) + I(Time^3) | Subject / condition:load),
+  data = dat5_binom,
+  family = binomial,
+  control = glmerControl(optimizer = "nloptwrap2")
+)
+```
+
+##### Test plots
+
+```{r plot glmer}
+dat5_binom_with_fit <- dat5_binom
+dat5_binom_with_fit$glmfit <- fitted(targ.binom.ot_2.reducedRE)
+glmerplot <- ggplot(dat5_binom_with_fit) + facet_wrap(~load + condition) +
+  theme_minimal() +
+  stat_summary(aes(Time, IA_1_P, color = factor(wmcap)), fun.y = mean, geom = "point") +
+  # stat_summary(aes(Time, IA_3_P, color=factor(as.numeric(wmcap) + 2, labels=c("low - comp","high - comp"))), fun.y=mean, geom="point") +
+  stat_summary(aes(x = Time, y = glmfit, color = factor(wmcap)), fun.y = mean, geom = "line") +
+  labs(y = "Fixation Proportion", x = "Time since word onset (ms)") +
+  scale_fill_brewer(type = "qual", palette = 2, guide = "legend")
+glmerplot2 <- ggplot(dat5_binom_with_fit) + facet_wrap(~wmcap + condition) +
+  theme_minimal() +
+  stat_summary(aes(Time, IA_1_P, color = factor(load)), fun.y = mean, geom = "point") +
+  # stat_summary(aes(Time, IA_3_P, color=factor(as.numeric(wmcap) + 2, labels=c("low - comp","high - comp"))), fun.y=mean, geom="point") +
+  stat_summary(aes(x = Time, y = glmfit, color = factor(load)), fun.y = mean, geom = "line") +
+  labs(y = "Fixation Proportion", x = "Time since word onset (ms)") +
+  scale_fill_brewer(type = "qual", palette = 2, guide = "legend")
+glmerplot3 <- ggplot(dat5_binom_with_fit) + facet_wrap(~wmcap + load) +
+  theme_minimal() +
+  stat_summary(aes(Time, IA_1_P, color = factor(condition)), fun.y = mean, geom = "point") +
+  # stat_summary(aes(Time, IA_3_P, color=factor(as.numeric(wmcap) + 2, labels=c("low - comp","high - comp"))), fun.y=mean, geom="point") +
+  stat_summary(aes(x = Time, y = glmfit, color = factor(condition)), fun.y = mean, geom = "line") +
+  labs(y = "Fixation Proportion", x = "Time since word onset (ms)") +
+  scale_fill_brewer(type = "qual", palette = 2, guide = "legend")
+
+```
+
+##### Final plots
+
+```{r plot & save glmers}
+ggsave(
+  "new_graphs_18_10_18/gal_targ_plot_fully_crossed_FE.lessReduced.3.mean_cl_boot.bw8.png",
+   plot_vwp_gca(
+     dat5_binom,
+     fit = targ.binom.ot_2.reducedRE.full.lessReduced,
+     showdata = T,
+     showdata.binwidth = 0.200,
+     showdata.ptsize = 0.6,
+     showdata.fundata = ggplot2::mean_cl_boot,
+     showdata.smooth.method = loess,
+     x.lim = c(0.2, 2.8),
+     y.lim = c(0, 1),
+     # .theme = theme_minimal,
+     grid.major.size = 0,
+     grid.major.color = "#FFFFFF",
+     grid.minor.linetype = 0,
+     grid.major.linetype = 0,
+     theme.text.size = 28#,
+     #theme.text.lineheight = 32
+   ),
+   device = png(width = 1600, height = 1000, units = "px")
+)
+ggsave(
+  "new_graphs_18_10_18/gal_comp_plot_fully_crossed_FE.lessReduced.mean_cl_boot.png",
+   plot_vwp_gca(
+     dat5_binom,
+     fit = comp.binom.ot_2.reducedRE.full,
+     showdata = T,
+     y.var = IA_3_P,
+     showdata.binwidth = 0.200,
+     showdata.ptsize = 0.3,
+     showdata.fundata = ggplot2::mean_cl_boot,
+     showdata.smooth.method = loess,
+     x.lim = c(0.2, 2.8),
+     y.lim = c(0, 1),
+     # .theme = theme_minimal,
+     grid.major.size = 0.1,
+     grid.major.color = "#AAAAAA",
+     grid.minor.linetype = 0,
+     theme.text.size = 28,
+     #theme.text.lineheight = 32
+     .title = "Effect of low vs. high WM load on phonological competitor fixation"
+   ),
+   device = png(width = 1600, height = 1000, units = "px")
+)
+ggsave(
+  "new_graphs_18_10_18/gal_fill_plot_fully_crossed_FE.lessReduced.mean_cl_boot.8.png",
+   plot_vwp_gca(
+     dat5_binom,
+     fit = fill.binom.ot_2.reducedRE.full,
+     showdata = T,
+     y.var = (IA_2_P + IA_4_P) / 2,
+     showdata.binwidth = 0.200,
+     showdata.ptsize = 0.3,
+     showdata.fundata = ggplot2::mean_cl_boot,
+     showdata.smooth.method = loess,
+     x.lim = c(0.2, 2.8),
+     y.lim = c(0, 1),
+     # .theme = theme_minimal,
+     grid.major.size = 0.1,
+     grid.major.color = "#AAAAAA",
+     grid.minor.linetype = 0,
+     theme.text.size = 28,
+     #theme.text.lineheight = 32
+     .title = "Effect of low vs. high WM load on normalized unrelated distractor fixation"
+   ),
+   device = png(width = 1600, height = 1000, units = "px")
+)
+ggsave(
+  "new_graphs_18_10_18/gal_comp_plot_fully_crossed_FE.lessReduced.mean_cl_boot.9.png",
+   plot_vwp_gca(
+     dat5_binom,
+     fit = comp.binom.ot_2.reducedRE.full,
+     showdata = T,
+     y.var = IA_3_P,
+     showdata.binwidth = 0.200,
+     showdata.ptsize = 0.3,
+     showdata.fundata = ggplot2::mean_cl_boot,
+     showdata.smooth.method = loess,
+     x.lim = c(0.2, 2.8),
+     y.lim = c(0, 0.2),
+     # .theme = theme_minimal,
+     grid.major.size = 0.1,
+     grid.major.color = "#AAAAAA",
+     grid.minor.linetype = 0,
+     theme.text.size = 28,
+     #theme.text.lineheight = 32
+     .title = "Effect of low vs. high WM load on phonological competitor fixation"
+   ),
+   device = png(width = 1600, height = 1000, units = "px")
+)
+ggsave(
+  "new_graphs_18_10_18/gal_fill_plot_fully_crossed_FE.lessReduced.mean_cl_boot.9.png",
+   plot_vwp_gca(
+     dat5_binom,
+     fit = fill.binom.ot_2.reducedRE.full,
+     showdata = T,
+     y.var = (IA_2_P + IA_4_P) / 2,
+     showdata.binwidth = 0.200,
+     showdata.ptsize = 0.3,
+     showdata.fundata = ggplot2::mean_cl_boot,
+     showdata.smooth.method = loess,
+     x.lim = c(0.2, 2.8),
+     y.lim = c(0, 0.2),
+     # .theme = theme_minimal,
+     grid.major.size = 0.1,
+     grid.major.color = "#AAAAAA",
+     grid.minor.linetype = 0,
+     theme.text.size = 28,
+     #theme.text.lineheight = 32
+     .title = "Effect of low vs. high WM load on normalized unrelated distractor fixation"
+   ),
+   device = png(width = 1600, height = 1000, units = "px")
+)
+```

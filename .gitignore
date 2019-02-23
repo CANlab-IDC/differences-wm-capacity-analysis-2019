@@ -1,0 +1,5 @@
+*.Rdata
+.Rhistory
+*.pdf
+*.png
+rawdata
