@@ -1,5 +1,5 @@
 ---
-title: "VWP WM - 2019"
+title: "Differences in Working Memory Capacity Affect Online Spoken Word Recognition: Evidence from Eye-Movements"
 output: html_notebook
 editor_options: 
   chunk_output_type: console

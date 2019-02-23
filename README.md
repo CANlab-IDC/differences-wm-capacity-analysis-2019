@@ -1,6 +1,6 @@
-# VWP WM - 2019
+# Differences in Working Memory Capacity Affect Online Spoken Word Recognition: Evidence from Eye-Movements
 
-See [./notebook.Rmd](./notebook.Rmd) for step-by-step analysis procedure.
+Mixed modelling analysis for *Differences in Working Memory Capacity Affect Online Spoken Word Recognition: Evidence from Eye-Movements* (in review). See [./notebook.Rmd](./notebook.Rmd) for step-by-step procedures.
 
 ## Requirements
 
@@ -10,9 +10,9 @@ See [./notebook.Rmd](./notebook.Rmd) for step-by-step analysis procedure.
 
 For our analysis these software were obtained with Anaconda Navigator (1.8.7) to increase reproducibility. More information and downloads can br found on the [Anaconda website](https://www.anaconda.com/)
 
-## R libraries used:
+## R libraries
 
-R Packages were acquired from the CRAN website https://cran.r-project.org/.
+R library packages were acquired from the CRAN website https://cran.r-project.org/.
 
 | Package                                                                     | Version | Used in
 |:----------------------------------------------------------------------------|:--------|:----------------
@@ -31,3 +31,31 @@ R Packages were acquired from the CRAN website https://cran.r-project.org/.
 | [`lme4`](https://cran.r-project.org/web/packages/lme4/index.html)           | 1.1-15  | modelling
 | [`Hmisc`](https://cran.r-project.org/web/packages/Hmisc/index.html)         | 4.1-1   | modelling
 | [`nloptr`](https://cran.r-project.org/web/packages/nloptr/index.html)       | 1.0.4   | modelling
+
+## Correspondance
+
+For questions or comments regarding the paper, including requests for access to the data under analysis, please address all correspondence to the corresponding author:
+
+**Boaz M. Ben-David, PhD**
+Communication, Aging and Neuropsychology Lab (CANlab),
+Baruch Ivcher School of Psychology, Interdisciplinary Center (IDC) Herzliya
+P.O. Box 167, Herzliya, 4610101, Israel
+
+| | |
+|:--|:--|
+| e-mail: |	[boaz.ben.david@idc.ac.il](mailto:boaz.ben.david@idc.ac.il) |
+| Phone:  | 	+972-9-9602429 |
+| Fax: | +972-9-9602845  |
+
+For questions or comments regarding the analysis tools software presented in this repository, including requests for support or offers of contribution, please address *electronic correspondence only* to the software's author:
+
+**Joshua Estrin Skrzypek**
+
+| | |
+|:--|:--|
+| e-mail: |	[jskrzypek@gmail.com](mailto:jskrzypek@gmail.com) |
+| GitHub: |	@jskrzypek |
+
+## Attribution
+
+All of the software and files used in the analysis that are presented in this repository were prepared by their author, Joshua Estrin Skrzypek (@jskrzypek). The work of the analysis itself was performed in collaboration with the authors of the paper.
