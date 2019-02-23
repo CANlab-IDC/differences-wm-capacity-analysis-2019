@@ -4,7 +4,7 @@ See [./notebook.Rmd](./notebook.Rmd) for step-by-step analysis procedure.
 
 ## Requirements
 
-| R (3.4.3+)
++ R (3.4.3+)
 + Rstudio (1.1.423+)
   - other software for building the R-markdown notebook
 
@@ -15,7 +15,7 @@ For our analysis these software were obtained with Anaconda Navigator (1.8.7) to
 R Packages (all acquired from CRAN https://cran.r-project.org/)
 
 | Package                                                                     | Version | Used in
-|-----------------------------------------------------------------------------|---------|-----------------
+|:----------------------------------------------------------------------------|:--------|:----------------
 | [`VWPre`](https://cran.r-project.org/web/packages/VWPre/index.html)         | 1.1.0   | data preparation
 | [`dplyr`](https://cran.r-project.org/web/packages/dplyr/index.html)         | 0.7.6   | data preparation
 | [`forcats`](https://cran.r-project.org/web/packages/forcats/index.html)     | 0.2.0   | data preparation
