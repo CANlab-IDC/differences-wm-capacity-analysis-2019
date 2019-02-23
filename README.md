@@ -6,13 +6,13 @@ See [./notebook.Rmd](./notebook.Rmd) for step-by-step analysis procedure.
 
 + R (3.4.3+)
 + Rstudio (1.1.423+)
-  - other software for building the R-markdown notebook
+  - *Optional; other software for building the R-markdown notebook may be used*
 
 For our analysis these software were obtained with Anaconda Navigator (1.8.7) to increase reproducibility. More information and downloads can br found on the [Anaconda website](https://www.anaconda.com/)
 
 ## R libraries used:
 
-R Packages (all acquired from CRAN https://cran.r-project.org/)
+R Packages were acquired from the CRAN website https://cran.r-project.org/.
 
 | Package                                                                     | Version | Used in
 |:----------------------------------------------------------------------------|:--------|:----------------
